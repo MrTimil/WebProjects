@@ -1,0 +1,765 @@
+<!doctype html>
+
+<html>
+
+<head>
+    <meta charset="UTF-8">
+<link rel=stylesheet href="style.css">
+    <title>Tetris 42</title>
+    <script>
+         // Réaliser par BOISSON Romain, PAQUETTE Emile 
+    // clic sur la zone de jeu (coordonnées relatives au canvas)
+    var clic = { x: 0, y: 0 };
+
+    var context = null;
+        
+    var rectangle = { x: 0, y: 0, hauteur: 0, largeur: 0, couleur: "" };
+   
+    var fin;
+    
+    var swap=true;
+	//Tableau de tetrimino ;
+ 	var tetrimino = [];
+    // Tableau permettant de créer des matrices
+    var MatriceTetrimino=[]; 
+    // tour sert a reguler la descente du tetrimino 
+    var tour;
+	// depDroit sert a ralentir le deplacement a droite
+	var depDroit;
+	//depGauche sert a ralentir le deplacement a gauche
+	var depGauche;
+    // Variables : pour les touches de déplacements 
+	var fleche_gauche=false;
+	var fleche_droite=false;
+	var fleche_haut=false;
+	var fleche_bas=false;
+    var espace=false;
+	
+	// Etat du jeu 
+	var play=false;
+	var lignes=0;
+    var level=1;
+	var score = 0;
+	// Nombre de ligne retirer en un placement
+	var ligneRetirer;
+
+	var grille = new Array(15); 
+
+
+        
+    // tableau representant le piece hold
+	var hold = [];
+    // Variables boolean des collisions 
+    var collisionGauche=false;
+    var collisionDroite=false;
+    var collisionBas=false;
+    var coliisionHaut=false;
+	// Est ce que le tetrimino peut tourner
+	var peutTourner=true; 
+        
+    var toucheDepuis=1;
+    // La fonction créer un nouveau tetrimino de facon aléatoire 
+    // Chaque type de tetrimino est associer à une couleur differente
+    // et à une matrice différente définies dans les cases
+	function nouveauTetrimino(){
+		var bloc= parseInt(Math.random()*7);
+		var typeBloc ;
+		colonneVide=[0,0,0,0];
+		switch (bloc){
+		case 0 : typeBloc="cyan" ;
+		     colonne1=[0,0,1,0];
+		     colonne2=[0,0,1,0];
+		     colonne3=[0,0,1,0];
+		     colonne4=[0,0,1,0];
+		     MatriceTetrimino=[colonne1,colonne2,colonne3,colonne4];break;
+		case 1 : typeBloc="orange";
+		     colonne1=[0,0,1,0];
+		     colonne2=[0,0,1,0];
+		     colonne3=[0,1,1,0];
+		     MatriceTetrimino=[colonneVide,colonne1,colonne2,colonne3];break;
+		case 2 : typeBloc="blue";
+             colonne1=[0,1,1,0];
+		     colonne2=[0,0,1,0];
+		     colonne3=[0,0,1,0];
+		     MatriceTetrimino=[colonneVide,colonne1,colonne2,colonne3];break;
+		case 3 : typeBloc="yellow";
+		     colonneVide1=[0,0,0,0];
+		     colonne1=[0,1,1,0];
+		     colonne2=[0,1,1,0];
+		     MatriceTetrimino=[colonneVide,colonne1,colonne2,colonneVide1];break;
+		case 4 : typeBloc="lime"   ;
+		     colonne1=[0,0,1,0];
+		     colonne2=[0,1,1,0];
+		     colonneVide1=[0,1,0,0];
+		     MatriceTetrimino=[colonneVide,colonne1,colonne2,colonneVide1];break;
+		case 5 : typeBloc="red"  ;
+		     colonne1=[0,1,0,0];
+		     colonne2=[0,1,1,0];
+		     colonneVide1=[0,0,1,0];
+		     MatriceTetrimino=[colonneVide,colonne1,colonne2,colonneVide1];break;
+		case 6 : typeBloc="purple"  ;
+		     colonne1=[0,1,0,0];
+		     colonne2=[0,1,1,0];
+		     colonne3=[0,1,0,0];
+		     MatriceTetrimino=[colonneVide,colonne1,colonne2,colonne3];break;
+		}
+    // Création d'un tetrimino à l'indice de la taille du tableau (si le tableau fait 3, plus grand indice = 2 donc création d'un tetrimino à l'indice 3)
+	tetrimino[tetrimino.length]={ x: 6, y : 0, Matrice:MatriceTetrimino,couleur:typeBloc};
+	
+	}
+	
+    // initialisation (appelée au chargement du corps du document <body onload="init">)    
+    init = function() {
+        // instanciation de la variable globale contenant le contexte
+        context = document.getElementById("cvs").getContext("2d");
+        context.width = document.getElementById("cvs").width;
+        context.height = document.getElementById("cvs").height;
+        
+		
+        // Initialisation des variables créer
+
+		initialisationGrille(grille);
+
+        document.getElementById("lignes").value = lignes;
+        document.getElementById("level").value =level;
+		document.getElementById("Score").value=score;
+        
+        tour=0;
+		depGauche=0;
+		depDroit=0;
+        nouveauTetrimino();
+	   insertTetrimino();
+
+	    nouveauTetrimino();
+	    nouveauTetrimino();
+        nouveauTetrimino();
+		
+        // 2 écouteurs pour le clavier (appui/relâchement d'une touche)
+        document.addEventListener("keydown", captureAppuiToucheClavier)
+        document.addEventListener("keyup", captureRelacheToucheClavier)
+        // on associe au document un écouteur d'événements souris
+        document.addEventListener("click", captureClicSouris)
+        // --> ces événements vont appeler les fonctions captureXYZ définies après.
+//        document.addEventListener("keypress", captureUnAppuiToucheClavier)
+                        
+        // lancement de la boucle de jeu
+        boucleDeJeu();
+    }
+    function sleep(milliseconds) {
+      var start = new Date().getTime();
+      for (var i = 0; i < 1e7; i++) {
+        if ((new Date().getTime() - start) > milliseconds){
+          break;
+        }
+      }
+    }
+    var temp1,temp2,temp3,temp4;
+function rotation(){
+	i=tetrimino[0].x;
+	while((i<tetrimino[0].x+4)&&(peutTourner)){
+		j=tetrimino[0].y
+		while((j<tetrimino[0].y+4)&&(peutTourner)){
+			if((grille[i][j]!=0)&&(grille[i][j]!=1)){
+				peutTourner=false;   
+			}else{
+				peutTourner=true;
+			}
+		j++;
+		}
+	i++;
+	}
+	if (peutTourner){
+		temp1 = tetrimino[0].Matrice[0][0];
+		temp2 = tetrimino[0].Matrice[0][1];
+		temp3 = tetrimino[0].Matrice[1][0];
+		temp4 = tetrimino[0].Matrice[1][1];
+		tetrimino[0].Matrice[0][0] = tetrimino[0].Matrice[0][3];
+		tetrimino[0].Matrice[0][1] = tetrimino[0].Matrice[1][3];
+		tetrimino[0].Matrice[1][1] = tetrimino[0].Matrice[1][2];
+		tetrimino[0].Matrice[1][0] = tetrimino[0].Matrice[0][2];
+		tetrimino[0].Matrice[1][2] = tetrimino[0].Matrice[2][2];
+		tetrimino[0].Matrice[0][2] = tetrimino[0].Matrice[2][3];
+		tetrimino[0].Matrice[0][3] = tetrimino[0].Matrice[3][3];
+		tetrimino[0].Matrice[1][3] = tetrimino[0].Matrice[3][2];
+		tetrimino[0].Matrice[2][2] = tetrimino[0].Matrice[2][1];
+		tetrimino[0].Matrice[2][3] = tetrimino[0].Matrice[3][1];
+		tetrimino[0].Matrice[3][2] = tetrimino[0].Matrice[2][0];
+		tetrimino[0].Matrice[3][3] = tetrimino[0].Matrice[3][0];
+		tetrimino[0].Matrice[3][0] = temp1;
+		tetrimino[0].Matrice[2][0] = temp2;
+		tetrimino[0].Matrice[3][1] = temp3;
+       		tetrimino[0].Matrice[2][1] = temp4;
+	}
+}
+
+	
+    function creaGrille() { //affichage grille 
+ 	var i; 
+	var j; 
+	for (i = 0 ; i <= context.width ; i=i+30){
+		for (j = 0 ; j <= context.height ; j=j+30 ){
+ 			rectangle.hauteur = rectangle.largeur = 30;
+            rectangle.couleur = "black";
+            context.strokeStyle= rectangle.couleur;
+            context.strokeRect(i,j, rectangle.largeur, rectangle.hauteur);
+			
+		} 
+	}
+  }
+
+function initialisationGrille(grille){
+	var k
+	for(k=0;k<grille.length;k++){
+		grille[k]=new Array(24);
+	}
+	for (var i=0; i < grille.length;i=i+1){
+		for (var j=0 ; j< grille[i].length ; j=j+1){
+			if ((i==2||i==13)||(j==20)){ // entourage de zone de jeu entouré par des deux 
+				grille[i][j]=2;
+			}else{
+				grille[i][j]= 0;
+			}
+		}
+	}
+}
+
+
+function insertTetrimino(){
+    var i = 0 , j = 0 ;
+    var positionY = tetrimino[0].y;
+    var positionX = tetrimino[0].x;
+    // on parcours la grille pour savoir ou est le tetrimino et on l'enleve 
+    for(i=0;i<grille.length;i++){
+        for(j=0;j<grille[i].length;j++){
+            if(grille[i][j]==1){
+                grille[i][j]=0;
+            }
+        }
+    }
+	for(i =0 ; i< tetrimino[0].Matrice.length;i++){
+		for(j = 0; j < tetrimino[0].Matrice[i].length;j++){
+            if(tetrimino[0].Matrice[i][j]==1){
+             grille[positionX+i][positionY+j]=tetrimino[0].Matrice[i][j];   
+            }
+		}
+	}
+}
+function collisionLeft(){
+    var i,j;
+    for(i=0;i<grille.length;i++){
+        for(j=0;j<grille[i].length;j++){
+            if(grille[i][j]==1){
+                if(grille[i-1][j]!=0&&grille[i-1][j]!=1){
+                    collisionGauche=true;
+                }
+            }
+        }
+    }
+    return collisionGauche;
+}
+function collisionRight(){
+    var i,j;
+    for(i=0;i<grille.length;i++){
+        for(j=0;j<grille[i].length;j++){
+            if(grille[i][j]==1){
+                if((grille[i+1][j]!=0)&&(grille[i+1][j]!=1)){
+                    collisionDroite=true;
+                }
+            }
+        }
+    }
+    return collisionDroite;
+}
+
+function collisionBottom(){
+    var i,j;
+    for(i=0;i<grille.length;i++){
+        for(j=0;j<grille[i].length;j++){
+            if(grille[i][j]==1){
+                if((grille[i][j+1]!=0&&grille[i][j+1]!=1)){
+                    collisionBas=true;
+                }
+            }
+        }
+    }
+    return collisionBas;
+}
+        
+function forceDrop(){
+	while ((collisionBottom()==false)) {
+    	tetrimino[0].y+=1;
+        insertTetrimino();
+        score+=10*level;
+        document.getElementById("Score").value = score;
+    }
+}
+  
+
+function pauseplay(){
+    if (play==true) {
+        play=false;
+        document.getElementById("pause").innerHTML = "PLAY";
+    } else if (play==false) {
+        play=true;
+        document.getElementById("pause").innerHTML = "PAUSE";
+    }
+}
+function removelines(){
+    var isFull=0;
+    var i ;
+    var testLigneComplete;
+    for(var j=19;j>0;j--){
+        isFull=0;
+        for(i=3;i<13;i++) {
+            if(grille[i][j]!=0 && grille[i][j]!=1){
+                isFull++;
+            }else{
+                isFull--;
+            }
+        }
+        if (isFull==10) {
+			ligneRetirer++;
+            virerLaLigne(j);
+            j=j+1;
+			lignes=lignes+1;
+			level = Math.ceil((lignes+1)/10);
+			score += 100*(ligneRetirer*ligneRetirer);
+			document.getElementById("lignes").value = lignes;
+            document.getElementById("level").value =level;
+			document.getElementById("Score").value = score;
+        }
+    }
+	ligneRetirer = 0 ;
+} 
+        
+function virerLaLigne(j) {
+    for(var i=3;i<13;i++) {
+        for(k=j;k>0;k--){
+            grille[i][k]=grille[i][k-1];
+            grille[i][0]=0;
+        }
+    }
+}
+function holdIt(tetrimino){
+    var temp={ x: 6, y : 0, Matrice:"",couleur:""};;
+    if(swap){    
+        if(hold.length==1){            
+            temp.x=hold[0].x;
+            temp.y=hold[0].y;
+            temp.Matrice=hold[0].Matrice;
+            temp.couleur=hold[0].couleur;
+
+            hold[0].x=6;
+            hold[0].y=0;
+            hold[0].Matrice=tetrimino[0].Matrice;
+            hold[0].couleur=tetrimino[0].couleur;
+
+            tetrimino[0].x=temp.x;
+            tetrimino[0].y=temp.y;
+            tetrimino[0].Matrice=temp.Matrice;
+            tetrimino[0].couleur=temp.couleur;
+            insertTetrimino();
+
+        }else{
+            hold[0]={ x: 6, y : 0, Matrice:"",couleur:""};
+
+            hold[0].x=6;
+            hold[0].y=0;
+            hold[0].Matrice=tetrimino[0].Matrice;
+            hold[0].couleur=tetrimino[0].couleur;
+
+            nouveauTetrimino();
+            tetrimino.shift();
+            insertTetrimino();
+        }
+        swap=false;
+    }
+}
+    boucleDeJeu = function() {
+        if(play){
+            // mise à jour de l'état du jeu
+            update(Date.now());    
+        }
+        // affichage de l'état du jeu
+        render();
+        // rappel de la boucle de jeu 
+        // requestAnimationFrame est une fonction JS servant à pré-calculer le prochain affichage
+        //  http://www.html5canvastutorials.com/advanced/html5-canvas-animation-stage/
+        requestAnimationFrame(boucleDeJeu);
+    }
+    
+    /**
+     *  Mise à jour de l'état du jeu
+     *  @param  d   date courante
+     */
+
+    update = function(d) {
+		   var i;
+		   var j;
+		   var k=0,l=0;
+            var descente;
+		collisionBottom();
+		if(fleche_bas){
+            if(collisionBas){
+		      //ne rien faire 
+		}else{
+		        tetrimino[0].y+=1;
+		        insertTetrimino();
+                score+=5*level;
+                document.getElementById("Score").value = score;
+                
+		   }
+		}
+		    if(fleche_gauche){
+			collisionLeft();
+		        if(collisionGauche){
+		            
+		        }else{
+				depGauche+=1;
+				if(depGauche%4==0){
+		            		tetrimino[0].x-=1;
+		            		insertTetrimino();
+				}
+		        }
+		    }
+		    if(fleche_droite){
+			collisionRight();
+		        if(collisionDroite){
+		            
+		        }else{
+				depDroit+=1;
+				if(depDroit%4==0){
+		            	tetrimino[0].x+=1;
+		            	insertTetrimino();
+					}
+		        }
+		    }
+		    // Verification si le tetrimino reste actif ou non 
+		    
+		    // Le tetrimino est actif donc descente si il est au dessus de la limite 
+		   // FAut donc changer la condition par une condition de collision general 
+        if(collisionBas && fin==1){
+            play=false;
+        }
+        if(collisionBas){
+            if(toucheDepuis%40==0){
+                for(i=0;i<grille.length;i++){
+                    for(j=0;j<grille[i].length;j++){
+                        if(grille[i][j]==1){
+                            grille[i][j]=tetrimino[0].couleur;
+                        }
+                    }
+                }
+            // création d'un nouveau tetrimino 
+            removelines();
+            nouveauTetrimino();
+            // supression du tetrimino[0]
+            tetrimino.shift();
+            insertTetrimino();
+            
+            fin=1;
+            toucheDepuis=1;
+            swap=true;
+            }else{
+                toucheDepuis++;
+            }
+        }else{
+            if(level==1){
+                descente=50;
+            }else{
+                descente=Math.ceil(50/(1+((level-1)*0.3)));
+            }
+            if ((tour%descente)==0){
+                    tetrimino[0].y++;
+                    insertTetrimino();
+            }
+		toucheDepuis=1;
+            	fin=0;
+        }
+
+        // descente du tetrimino 
+        tour=tour+1;
+
+        // Remise a zero des collisions
+        collisionGauche=false;
+        collisionDroite=false;
+        collisionBas=false;
+        collisionHaut=false;
+        
+        // Remise a zero da la possibilite de tourner
+		peutTourner=true;
+        
+    }
+    
+    /**
+     *  Fonction réalisant le rendu de l'état du jeu
+     */
+    render = function() {
+	
+        // effacement de l'écran
+
+        var i = 0;
+        context.clearRect(0, 0, context.width, context.height);
+        creaGrille();
+
+		// Affichage du tetrimino en jeu et des immobiles.
+        for(i=0;i<grille.length;i++){
+            for(j=0;j<grille[i].length;j++){
+                if (grille[i][j]==1){
+                	context.fillStyle=tetrimino[0].couleur;
+                    context.fillRect(((i-3)*30)+1,((j)*30)+1,28,28);
+                }else if (grille[i][j]==0){
+                    
+                }else{
+                    context.fillStyle= grille[i][j];
+                    context.fillRect(((i-3)*30)+1,((j)*30)+1,28,28);
+                }
+            }
+        } 
+
+        var arrayLignes = document.getElementById("comingup").rows;
+        var image ; 
+        var positionImage;
+        for(i=0;i<3;i++){
+            if(tetrimino[i+1].couleur=="red"){
+                image = "url('image/imageZ.png')" ;
+                positionImage="17px 1px";
+            }
+            if(tetrimino[i+1].couleur=="lime"){
+                image = "url('image/imageS.png')" ;
+                positionImage="17px 1px";
+            }
+            if(tetrimino[i+1].couleur=="cyan"){
+                image = "url('image/imageI.png')" ;
+                positionImage="1px 15px";
+            }
+            if(tetrimino[i+1].couleur=="yellow"){
+                image = "url('image/imageO.png')" ;
+                positionImage="32px 1px";
+            }
+            if(tetrimino[i+1].couleur=="orange"){
+                image = "url('image/imageL.png')" ;
+                positionImage="17px 1px";
+            }
+            if(tetrimino[i+1].couleur=="blue"){
+                image = "url('image/imageJ.png')" ;
+                positionImage="17px 1px";
+            }
+            if(tetrimino[i+1].couleur=="purple"){
+                image = "url('image/imageT.png')" ;
+                positionImage="17px 1px";
+            }
+            arrayLignes[i].style.backgroundImage = image;
+            arrayLignes[i].style.backgroundPosition= positionImage;
+            arrayLignes[i].style.backgroundRepeat = "no-repeat";
+        }
+        var tableauHold = document.getElementById("hold").rows;
+        var imageHold;
+        var positionHold;
+        if(hold.length==1){
+                if(hold[0].couleur=="red"){
+                    imageHold= "url('image/imageZ.png')" ;
+                    positionHold ="17px 30px";
+                }
+                if(hold[0].couleur=="lime"){
+                    imageHold = "url('image/imageS.png')" ;
+                    positionHold="17px 30px";
+                }
+                if(hold[0].couleur=="cyan"){
+                    imageHold = "url('image/imageI.png')" ;
+                    positionHold="1px 30px";
+                }
+                if(hold[0].couleur=="yellow"){
+                    imageHold = "url('image/imageO.png')" ;
+                    positionHold="32px 30px";
+                }
+                if(hold[0].couleur=="orange"){
+                    imageHold= "url('image/imageL.png')" ;
+                    positionHold="17px 30px";
+                }
+                if(hold[0].couleur=="blue"){
+                    imageHold = "url('image/imageJ.png')" ;
+                    positionHold="17px 30px";
+                }
+                if(hold[0].couleur=="purple"){
+                    imageHold = "url('image/imageT.png')" ;
+                    positionHold="17px 30px";
+                }
+        }
+        tableauHold[0].style.backgroundImage = imageHold;
+        tableauHold[0].style.backgroundPosition = positionHold;
+        tableauHold[0].style.backgroundRepeat = "no-repeat";
+        
+        if(!play && fin==1){
+            context.fillStyle="grey";
+            context.fillRect(0,(context.height/2)-50,300,75);
+            context.font="45px Verdana";
+            context.fillStyle="black";
+            context.fillText("GAME OVER !",0,(context.height/2));
+            
+        }
+    }
+    
+
+    captureAppuiToucheClavier = function(event) {
+        // pratique pour connaître les keyCode des touches du clavier :
+        //  --> http://www.cambiaresearch.com/articles/23/javascript-key-codes
+
+	var x = event.keyCode;
+        if(play){
+		    if(x==32){
+		        espace=true;
+		    }
+		    if(x==37){
+		        fleche_gauche=true;
+		        fleche_droite=false;
+		    }
+		      if (x==38){
+		      fleche_haut=true;
+		    }
+		    if(x==39){
+		        fleche_droite=true;
+		        fleche_gauche=false;
+		    }
+		    if(x==40){
+		        fleche_bas=true;
+		    }
+		}
+		event.preventDefault();
+		return false;
+    }
+    
+    /**
+     *  Fonction appelée lorsqu'une touche du clavier est relâchée
+     *  Associée à l'événement "keyUp"
+     */
+    captureRelacheToucheClavier = function(event) {
+		var x = event.keyCode;
+		if(play){
+		    if(x==32){
+		        forceDrop();
+                toucheDepuis=40;
+		    }
+			if(x==37){
+		        	fleche_gauche=false;
+			}
+		    if(x==38){
+		        fleche_haut=false;
+			rotation();
+			insertTetrimino();
+		    }
+		    if(x==39){
+		        fleche_droite=false;
+		    }
+		    if(x==40){
+		        fleche_bas=false;
+		    }
+		}
+        if(x==116){
+            window.location.reload();
+        }
+        if(x==80){
+          pauseplay();
+        }
+        if(x==67){
+			holdIt(tetrimino);
+		}
+		event.preventDefault();
+		return false;
+    }
+    
+    /**
+     *  Fonction appelée lorsqu'une touche du clavier est relâchée
+     *  Associée à l'événement "click"
+     */
+    captureClicSouris = function(event) {
+        // calcul des coordonnées de la souris dans le canvas
+        if (event.target.id == "cvs") {
+            clic.x = event.pageX - event.target.offsetLeft;
+            clic.y = event.pageY - event.target.offsetTop;
+        }
+    }
+        
+    </script>
+</head>
+
+<body onload="init()">
+
+<main>   
+<h6><audio src="audio/Tetris.mp3" controls> </audio></h6> 
+
+    <div id=divHold>
+     
+            <table id=hold width="130" height="80">
+                   
+                <tr>
+                    <td>
+                        HOLD
+                    </td>
+                </tr>
+            </table>
+    </div>
+    
+    <div id=stats>
+        <a id="pause" class="bouton2" onclick="pauseplay()">PLAY</a>
+        <a id="reset" class="bouton1" onclick="window.location.reload()">RESET</a>
+       
+            <table id=score>
+                <tr>
+                    <td>
+                        Level  :
+                    </td>
+                    <td>
+                        <input id="level" name="Level" type="text" size="2" readonly="" value="1">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Lignes :
+                    </td>
+                    <td>
+                        <input id="lignes" name="Lignes" type="text" size="2" readonly="" value="0">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Score  :
+                    </td>
+                    <td>
+                        <input id="Score" name="Score" type="text" size="2" readonly="" value="0">
+                    </td>
+                </tr>
+            </table>
+        
+        </div>
+    <canvas id="cvs" width="300" height="600" style="margin: 10px auto; border: solid 1px #000;"></canvas>
+
+    
+    
+ <p id= "come" >COMING UP</p>
+    
+       
+        <table id="comingup" width="130" height="203">
+            <tr>
+                <td id=case1> </td>
+            </tr>
+
+            <tr>
+                <td> </td>
+            </tr>
+
+            <tr>
+                <td> </td>
+            </tr>
+        </table>
+        
+        <div id="touches">
+        <img src="image/touche.png" alt="Les touches"  style="width:182px; height:230px;"/>
+      
+    </div>
+
+    </main>
+
+</body>
+
+</html>
