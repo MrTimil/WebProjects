@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+	<head>
+		<link href="../styles/style.css" 		rel="stylesheet">
+		<link href="../styles/imprimante.css"	rel="stylesheet" media="print">
+		<meta charset="utf-8">
+		<title> Réservation </title>
+	</head>
+
+	<body>
+		<main>
+		<div id="centre">
+			<a href="../index.html" id="head">
+				<header>
+					<img height="262" width="499" src="../images/logo.png" alt="Logo CMI : problème de chargement de la page">
+					<h1> Informations </h1>
+				</header>
+			</a>
+
+
+			<nav id="menu" >
+				<ul>
+					<li id="bouton"> Menu </li>
+					<li>
+						<ul id="roule">
+								<li> <a target="_blank" href="./jour1.html" id="niveau1"> Jour 1 	</a>
+									<ul id="test1">
+										<li> <a href="./jour1.html#film1" > 14h								</a>	</li>
+										<li> <a href="./jour1.html#film2" > 17h								</a>	</li>
+										<li> <a href="./jour1.html#film3" > 20h								</a> 	</li>
+										<li> <a href="./jour1.html#film4" > 23h								</a>	</li>
+									</ul>
+								</li>
+
+								<li> <a target="_blank" href="./jour2.html" id="niveau1"> Jour 2 	</a>
+									<ul id="test2">
+										<li> <a href="./jour2.html#film5" > 	14h 				</a>				</li>
+										<li> <a href="./jour2.html#film6" > 	17h 				</a>				</li>
+										<li> <a href="./jour2.html#film7" >  	20h 				</a>				</li>
+										<li> <a href="./jour2.html#film8" > 	23h 				</a>				</li>
+									</ul>
+								</li>
+
+								<li> <a target="_blank" href="./jour3.html" id="niveau1"> Jour 3 	 	</a>
+									<ul id="test3">
+										<li>	<a href="./jour3.html#film9"  > 	14h					</a>			</li>
+										<li>	<a href="./jour3.html#film10" > 	17h				</a>			</li>
+										<li>	<a href="./jour3.html#film11" > 	20h				</a>			</li>
+										<li>	<a href="./jour3.html#film12" > 	23h </a> 			</li>
+									</ul>
+								</li>
+							<li>
+									<a target="_blank" href="./infos.html" id="niveau1"> 			  Infos pratiques	  </a>
+							</li>
+
+							<li>
+									<a target="_blank" href="./reservation.html" id="niveau1">	Réservation 	</a>
+							</li>
+
+						</ul>
+					</li>
+				</ul>
+			</nav>
+
+					<h2> Veuillez remplir les informations suivantes : </h2>
+
+						<form method="POST" >
+
+						<fieldset>
+							<legend> Votre réservation </legend>
+								<table>
+									<tr>
+										<td id="colonnegauche">
+											Date :
+										</td>
+
+										<td id="radio">
+											<input type="radio" name="jour" value="1"
+											id="rad1">
+											<label for="rad1"> Jour 1 </label>
+
+
+											<input type="radio" name="jour" value="2"
+											id="rad2">
+											<label for="rad2">Jour 2 </label>
+
+
+
+											<input type="radio" name="jour" value="3"
+											id="rad3">
+											<label for="rad3"> Jour 3 </label>
+										</td>
+									</tr>
+
+									<tr>
+										<td id="colonnegauche">
+											<label for="H"> Horaire du film : </label>
+										</td>
+
+										<td>
+											<select 	name="horaire" id="H">
+												<option value="14">	14h	</option>
+												<option value="17">	17h	</option>
+												<option value="20">	20h	</option>
+												<option value="23">	23h	</option>
+											</select>
+										</td>
+									</tr>
+
+									<tr>
+										<td id="colonnegauche">
+											Nombre de place :
+										</td>
+
+										<td>
+											<input type="number" name="tickets" min="1"
+											max="10" step="1" id="T" required>
+										</td>
+									</tr>
+								</table>
+
+						</fieldset>
+
+						<fieldset>
+							<legend> Vos coordonnées  </legend>
+
+								<table>
+
+									<tr>
+										<td id="colonnegauche">
+												Votre nom :
+										</td>
+
+										<td>
+											<input type="text" name="nom" size="44"
+											id="N" maxlength="60"
+											placeholder="Veuillez indiquer votre nom"
+											pattern="^[a-zA-Z]+(([\'\,\.\- ][a-zA-Z ])?[a-zA-Z]*)*$"  required >
+										</td>
+									</tr>
+
+									<tr>
+										<td id="colonnegauche">
+											Votre email :
+										</td>
+										<td>
+											<input type="email" name="email" size="44"
+											id="E" maxlength="60"
+											placeholder="Veuillez indiquer votre email"
+											pattern="^([\w\d\-\.]+)@{1}(([\w\d\-]{1,67})|([\w\d\-]+\.[\w\d\-]{1,67}))\.(([a-zA-Z\d]{2,4})(\.[a-zA-Z\d]{2})?)$" required >
+										</td>
+									</tr>
+
+									<tr>
+										<td id="colonnegauche">
+											Votre code secret  :
+										</td>
+
+										<td>
+											<input type="password" name="code" size="44"
+											id="C" maxlength="60"
+											placeholder="code secret : (des chiffres et des lettres) "
+											pattern="^\w{5,255}" required>
+										</td>
+
+									</tr>
+								</table>
+
+						</fieldset>
+
+						<table>
+							<tr>
+								<td>
+									<input type="checkbox" name="plus18" value="ok"
+									required id="ok1">
+									<label for="ok1"> J'ai plus de 18 ans </label>
+								</td>
+							</tr>
+
+							<tr>
+								<td>
+									<input type="checkbox" name="cgu" value="ok"
+									required  id="ok2">
+									<label for="ok2"> J'ai pris connaissance des conditions générales d'utilisation </label>
+								</td>
+							</tr>
+
+						</table>
+
+						<div id="milieu">
+						<input  type="submit" value="Réserver" name="btn">
+						<input type="hidden" name="id" value="PAQUETTE" >
+						<input  type="reset" value="Annuler">
+
+						</div>
+
+
+
+					<footer>
+							<ul>
+									<li>   	© 2015 - PAQUETTE					</li>
+									<li>  <a target="_blank" href="#"> Infos légales </a>			</li>
+									<li>  <a target="_blank" href="mailto:emile.paquette@edu.univ-fcomte.fr"> Contactez le webmaster </a> </li>
+							</ul>
+					</footer>
+				</form>
+		</div>
+			</main>
+	</body>
+</html>
